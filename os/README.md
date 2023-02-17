@@ -20,7 +20,7 @@ oc apply --filename=os/buildconfig.yaml
 And, start the build:
 
 ```bash
-oc start-build typescript-ex --follow --wait
+oc start-build nodejs-ex --follow --wait
 ```
 
 [nodejsExRepo]: https://github.com/otaviof/nodejs-ex
