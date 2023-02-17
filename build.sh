@@ -1,7 +1,7 @@
 #!/bin/bash
 
 shopt -s inherit_errexit
-set -xeu -o pipefail
+set -eu -o pipefail
 
 #
 # Functions
