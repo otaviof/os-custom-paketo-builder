@@ -1,0 +1,28 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nodejs-ex
+  name: nodejs-ex
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nodejs-ex
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: nodejs-ex
+    spec:
+      containers:
+        - name: nodejs-ex
+          image: ghcr.io/otaviof/nodejs-ex:latest
+          imagePullPolicy: Always
+          securityContext:
+            runAsUser: 1000

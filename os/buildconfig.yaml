@@ -1,0 +1,33 @@
+---
+kind: BuildConfig
+apiVersion: build.openshift.io/v1
+metadata:
+  labels:
+    app: nodejs-ex
+  name: nodejs-ex
+spec:
+  successfulBuildsHistoryLimit: 1
+  failedBuildsHistoryLimit: 1
+  source:
+    type: Git
+    git:
+      ref: main
+      uri: https://github.com/otaviof/nodejs-ex.git
+  strategy:
+    type: Custom
+    customStrategy:
+      forcePull: true
+      from:
+        kind: DockerImage
+        name: ghcr.io/otaviof/os-custom-paketo-builder:latest
+      env:
+        - name: BUILD_PRIVILEGED
+          value: "false"
+        - name: CNB_PLATFORM_API
+          value: "0.10"
+  output:
+    to:
+      kind: DockerImage
+      name: ghcr.io/otaviof/nodejs-ex:latest
+    pushSecret:
+      name: github-ghcr-io
