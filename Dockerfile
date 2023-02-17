@@ -1,26 +1,25 @@
-FROM docker.io/paketobuildpacks/builder:full
+FROM docker.io/paketobuildpacks/builder:base
 
 ENV \
-     HOME="/workspace" \
-     S2I_ARTIFACTS_DIR="/tmp/artifacts" \
-     S2I_SRC_DIR="/tmp/src" \
+     DOCKER_CONFIG="/home/cnb/.docker" \
      CNB_USER_ID="1000" \
-     CNB_GROUP_ID="1000" \
-     CNB_BASE_DIR="/data"
+     CNB_GROUP_ID="1000"
 
 USER 0
 
-COPY . /usr/libexec/builder
+COPY build.sh /
 
-RUN  apt update && apt -y install jq && rm -rf /var/cache/{apt,debconf}
+RUN \
+     apt-get update && \
+     apt-get -y install sudo && \
+     rm -rf /var/cache/{apt,debconf}
 
-RUN chown -vR ${CNB_USER_ID}:${CNB_GROUP_ID} /cnb/lifecycle && \
-     mkdir -p ${HOME} && chown -v ${CNB_USER_ID}:${CNB_GROUP_ID} ${HOME} && \
-     mkdir -p ${CNB_BASE_DIR} && chown -v ${CNB_USER_ID}:${CNB_GROUP_ID} ${CNB_BASE_DIR} && \
-     mkdir -p ${S2I_SRC_DIR} && chown -v ${CNB_USER_ID}:${CNB_GROUP_ID} ${S2I_SRC_DIR}
-
-WORKDIR ${HOME}
+RUN \
+     passwd -d cnb && \
+     usermod -aG sudo cnb && \
+     mkdir -pv ${DOCKER_CONFIG} && \
+     chown -Rv ${CNB_USER_ID}:${CNB_GROUP_ID} ${DOCKER_CONFIG}
 
 USER ${CNB_USER_ID}
 
-CMD ["/usr/libexec/builder/build.sh"]
+ENTRYPOINT [ "/build.sh" ]
