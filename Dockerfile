@@ -8,8 +8,8 @@ ENV \
 USER 0
 
 RUN \
-     # installing sudo pakage, the "base" CNB comes without any extra packages installed, thus
-     # reassuring the required pacakge is prenset
+     # installing sudo pakage, the "base" CNB comes without any extra packages installed thus
+     # reassuring the required pacakge is present
      apt-get update && apt-get -y install sudo && \
      rm -rf "/var/cache/{apt,debconf}"
 

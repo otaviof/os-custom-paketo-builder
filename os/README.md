@@ -11,13 +11,22 @@ oc create secret docker-registry "github-ghcr-io" \
 	--docker-password="${GITHUB_TOKEN}"
 ```
 
-Now, you can apply the `BuildConfig` resource:
+The CNB must run as a non-privileged user, therefore add `anyuid` SCC to the respective service-account:
+
+```bash
+oc adm policy add-scc-to-user anyuid --serviceaccount=default && \
+	oc adm policy add-scc-to-user anyuid --serviceaccount=default
+```
+
+The `anyuid` SCC takes place in combination with the `BUILD_PRIVILEGED` environment variable which effectively allows the POD to run with a non-privileged user.
+
+Next, you can apply the `BuildConfig` resource:
 
 ```bash
 oc apply --filename=os/buildconfig.yaml
 ```
 
-And, start the build:
+Finally, start the build:
 
 ```bash
 oc start-build nodejs-ex --follow --wait
