@@ -18,8 +18,8 @@ spec:
     customStrategy:
       forcePull: true
       from:
-        kind: DockerImage
-        name: ghcr.io/otaviof/os-custom-paketo-builder:latest
+        kind: ImageStreamTag
+        name: os-custom-paketo-builder:latest
       env:
         - name: BUILD_PRIVILEGED
           value: "false"
