@@ -5,10 +5,17 @@ The `BuildConfig` in this directory contains a example of using the `Custom` str
 In order to push the container image, the secret defined on the `BuildConfig`'s `.spec.output.pushSecret` must be created, i.e.:
 
 ```bash
-oc create secret docker-registry "github-ghcr-io" \
-	--docker-server="ghcr.io" \
-	--docker-username="${GITHUB_USER}" \
-	--docker-password="${GITHUB_TOKEN}"
+oc create secret docker-registry internal-registry \
+	--docker-server="image-registry.openshift-image-registry.svc:5000" \
+	--docker-username="kubeadmin" \
+	--docker-password="$(oc whoami --show-token)"
+
+```
+
+Including the `ImageStream` creation:
+
+```bash
+oc create imagestream nodejs-ex
 ```
 
 The CNB must run as a non-privileged user, therefore add `anyuid` SCC to the respective service-account:

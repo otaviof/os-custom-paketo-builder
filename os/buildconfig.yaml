@@ -8,6 +8,7 @@ metadata:
 spec:
   successfulBuildsHistoryLimit: 1
   failedBuildsHistoryLimit: 1
+  mountTrustedCA: true
   source:
     type: Git
     git:
@@ -27,7 +28,7 @@ spec:
           value: "0.10"
   output:
     to:
-      kind: DockerImage
-      name: ghcr.io/otaviof/nodejs-ex:latest
+      kind: ImageStreamTag
+      name: nodejs-ex:latest
     pushSecret:
-      name: github-ghcr-io
+      name: internal-registry

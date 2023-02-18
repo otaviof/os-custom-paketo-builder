@@ -12,7 +12,7 @@ function fail() {
     exit 1
 }
 
-function print_phase() {
+function phase() {
     echo "---> Phase: ${*}..."
 }
 
@@ -20,12 +20,14 @@ function print_phase() {
 # Preparing the Environment
 #
 
-print_phase "Preparing the environment"
+phase "Preparing the environment"
 
-# the following environment variables are provided by the default by OpenShift Builds, providing
-# essential information for the CNB lifecycle manager, however in a sightly different format
-OUTPUT_REGISTRY_IMAGE="${OUTPUT_REGISTRY_IMAGE:-}"
-PUSH_DOCKERCFG_PATH="${PUSH_DOCKERCFG_PATH:-}"
+# fully qualified container image name
+readonly OUTPUT_REGISTRY_IMAGE="${OUTPUT_REGISTRY_IMAGE:-}"
+# path to the `.spec.output.pushSecret` secret mount
+readonly PUSH_DOCKERCFG_PATH="${PUSH_DOCKERCFG_PATH:-}"
+# informed by OpenShift Builds points to the fully qualified container registry hostname
+readonly OUTPUT_REGISTRY="${OUTPUT_REGISTRY:-}"
 
 # making sure the required configuration environment varaibles are present
 [[ ! -n "${OUTPUT_REGISTRY_IMAGE}" ]] && \
@@ -34,56 +36,63 @@ PUSH_DOCKERCFG_PATH="${PUSH_DOCKERCFG_PATH:-}"
     fail "PUSH_DOCKERCFG_PATH environment varible is not set!"
 
 #
-# Docker Config
+# Container-Registry Authentication
 #
 
-print_phase "Preparing Container-Registry credentials"
+phase "Preparing Container-Registry credentials ('${PUSH_DOCKERCFG_PATH}')"
 
-# docker configuration directory path
-DOCKER_CONFIG="${DOCKER_CONFIG:-}"
+# docker configuration directory path, by convetion located at the user's home directory
+readonly export DOCKER_CONFIG="${DOCKER_CONFIG:-${HOME}/.docker}"
 
-[[ ! -n "${DOCKER_CONFIG}" ]] && \
-    fail "DOCKER_CONFIG environment varible is not set!"
 [[ ! -d "${DOCKER_CONFIG}" ]] && \
-    fail "'${DOCKER_CONFIG}' directory is not found!"
+    mkdir -pv "${DOCKER_CONFIG}"
 
 # complete secret file path mounted by OpenShift Builds (".spec.output.pushSecret.name"), the secret
 # is mandatory since it controls the Container-Registry credentials.
-DOCKER_CONFIG_PATH="${PUSH_DOCKERCFG_PATH}/.dockerconfigjson"
+readonly PUSH_DOCKERCFG_FILE_PATH="${PUSH_DOCKERCFG_PATH}/.dockerconfigjson"
 
-[[ ! -f "${DOCKER_CONFIG_PATH}" ]] && \
-    fail "'${DOCKER_CONFIG_PATH}' is not found!"
+[[ ! -f "${PUSH_DOCKERCFG_FILE_PATH}" ]] && \
+    fail "'${PUSH_DOCKERCFG_FILE_PATH}' is not found!"
 
 # the CNB uses the Docker configuration format to load the Container Registry authentication details
 # and OpenShift mounts the BuildConfig's ".spec.output.pushSecret" in the build container using a
 # different file path than the CNB expects, this script is a worksaround to link the data to the
 # conventional location
-ln -sv "${DOCKER_CONFIG_PATH}" "${DOCKER_CONFIG}/config.json"
+ln -sv "${PUSH_DOCKERCFG_FILE_PATH}" "${DOCKER_CONFIG}/config.json"
+
+#
+# OpenShift Internal Registry CA
+#
+
+# common location where the secret is mounted in OpenShift Builds
+readonly CLUSTER_CA_PATH="/var/run/configs/openshift.io/certs/certs.d/${OUTPUT_REGISTRY}/ca.crt"
+
+if [ -f "${CLUSTER_CA_PATH}" ] ; then
+    phase "Adding CA to local trust store ('${CLUSTER_CA_PATH}')"
+    sudo cp -v "${CLUSTER_CA_PATH}" /usr/local/share/ca-certificates
+    sudo update-ca-certificates
+fi
 
 #
 # Buildpacks Lifecycle
 #
 
-export CNB_LOG_LEVEL="debug"
-export CNB_APP_DIR="."
-
-if [ ! -d "${CNB_APP_DIR}" ]; then
-    fail "'${CNB_APP_DIR}' is not found!"
-fi
+readonly export CNB_LOG_LEVEL="debug"
+readonly export CNB_APP_DIR="."
 
 # making sure the application repository clone location is `rw` for the cnb user, for instance when
 # building a Node.js application it needs to populate `node_modules` folder
-print_phase "Changing the ownership of '${CNB_APP_DIR}' recursively (UID='${UID}')"
+phase "Changing the ownership of '${CNB_APP_DIR}' recursively ('UID=${UID}')"
 sudo chown -Rv cnb:cnb "${CNB_APP_DIR}"
 
-print_phase "Files on '${CNB_APP_DIR}' ('PWD=${PWD}')"
+phase "Files on '${CNB_APP_DIR}' ('PWD=${PWD}')"
 ls -l ${CNB_APP_DIR}/
 
 #
 # CNB
 #
 
-print_phase "Running creator for image-tag '${OUTPUT_REGISTRY_IMAGE}'"
+phase "Running creator for image-tag '${OUTPUT_REGISTRY_IMAGE}'"
 set -x
 exec /cnb/lifecycle/creator \
     -log-level="${CNB_LOG_LEVEL}" \
