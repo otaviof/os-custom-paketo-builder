@@ -1,4 +1,4 @@
-# OpenShift `BuildConfig`
+# OpenShift Build
 
 The `BuildConfig` in this directory contains a example of using the `Custom` strategy to build a [Node.js application][nodejsExRepo] using the Buildpacks CNB (Paketo) in this repository.
 
@@ -9,7 +9,6 @@ oc create secret docker-registry internal-registry \
 	--docker-server="image-registry.openshift-image-registry.svc:5000" \
 	--docker-username="kubeadmin" \
 	--docker-password="$(oc whoami --show-token)"
-
 ```
 
 Including the `ImageStream` creation:
@@ -37,6 +36,28 @@ Finally, start the build:
 
 ```bash
 oc start-build nodejs-ex --follow --wait
+```
+
+## Deploying
+
+To rollout the application in OpenShift, create a new `deployment` and expose it with:
+
+```bash
+oc new-app nodejs-ex:latest
+oc expose deployment nodejs-ex --port=8080 --target-port=8080
+oc expose service nodejs-ex
+```
+
+Then get the route created:
+
+```bash
+oc get routes nodejs-ex
+```
+
+And try to reach its endpoint, for instance:
+
+```bash
+curl http://nodejs-ex-otaviof.apps-crc.testing
 ```
 
 [nodejsExRepo]: https://github.com/otaviof/nodejs-ex

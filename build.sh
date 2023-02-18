@@ -68,7 +68,7 @@ ln -sv "${PUSH_DOCKERCFG_FILE_PATH}" "${DOCKER_CONFIG}/config.json"
 readonly CLUSTER_CA_PATH="/var/run/configs/openshift.io/certs/certs.d/${OUTPUT_REGISTRY}/ca.crt"
 
 if [ -f "${CLUSTER_CA_PATH}" ] ; then
-    phase "Adding CA to local trust store ('${CLUSTER_CA_PATH}')"
+    phase "Adding CA to the trust store ('${CLUSTER_CA_PATH}')"
     sudo cp -v "${CLUSTER_CA_PATH}" /usr/local/share/ca-certificates
     sudo update-ca-certificates
 fi
@@ -77,8 +77,7 @@ fi
 # Buildpacks Lifecycle
 #
 
-readonly export CNB_LOG_LEVEL="debug"
-readonly export CNB_APP_DIR="."
+readonly export CNB_APP_DIR="${CNB_APP_DIR:-.}"
 
 # making sure the application repository clone location is `rw` for the cnb user, for instance when
 # building a Node.js application it needs to populate `node_modules` folder
@@ -88,13 +87,6 @@ sudo chown -Rv cnb:cnb "${CNB_APP_DIR}"
 phase "Files on '${CNB_APP_DIR}' ('PWD=${PWD}')"
 ls -l ${CNB_APP_DIR}/
 
-#
-# CNB
-#
-
 phase "Running creator for image-tag '${OUTPUT_REGISTRY_IMAGE}'"
 set -x
-exec /cnb/lifecycle/creator \
-    -log-level="${CNB_LOG_LEVEL}" \
-    -app="${CNB_APP_DIR}" \
-    "${OUTPUT_REGISTRY_IMAGE}"
+exec /cnb/lifecycle/creator -log-level="debug" -app="${CNB_APP_DIR}" "${OUTPUT_REGISTRY_IMAGE}"
