@@ -24,15 +24,12 @@ print_phase "Preparing the environment"
 
 # the following environment variables are provided by the default by OpenShift Builds, providing
 # essential information for the CNB lifecycle manager, however in a sightly different format
-OUTPUT_REGISTRY="${OUTPUT_REGISTRY:-}"
-OUTPUT_IMAGE="${OUTPUT_IMAGE:-}"
+OUTPUT_REGISTRY_IMAGE="${OUTPUT_REGISTRY_IMAGE:-}"
 PUSH_DOCKERCFG_PATH="${PUSH_DOCKERCFG_PATH:-}"
 
 # making sure the required configuration environment varaibles are present
-[[ ! -n "${OUTPUT_REGISTRY}" ]] && \
-    fail "OUTPUT_REGISTRY environment varible is not set!"
-[[ ! -n "${OUTPUT_IMAGE}" ]] && \
-    fail "OUTPUT_IMAGE environment varible is not set!"
+[[ ! -n "${OUTPUT_REGISTRY_IMAGE}" ]] && \
+    fail "OUTPUT_REGISTRY_IMAGE environment varible is not set!"
 [[ ! -n "${PUSH_DOCKERCFG_PATH}" ]] && \
     fail "PUSH_DOCKERCFG_PATH environment varible is not set!"
 
@@ -82,16 +79,13 @@ sudo chown -Rv cnb:cnb "${CNB_APP_DIR}"
 print_phase "Files on '${CNB_APP_DIR}' ('PWD=${PWD}')"
 ls -l ${CNB_APP_DIR}/
 
-# fully qualified container registry image name and tag
-FQIN="${OUTPUT_REGISTRY}/${OUTPUT_IMAGE}"
-
 #
 # CNB
 #
 
-print_phase "Running creator for image-tag '${FQIN}'"
+print_phase "Running creator for image-tag '${OUTPUT_REGISTRY_IMAGE}'"
 set -x
 exec /cnb/lifecycle/creator \
     -log-level="${CNB_LOG_LEVEL}" \
     -app="${CNB_APP_DIR}" \
-    "${FQIN}"
+    "${OUTPUT_REGISTRY_IMAGE}"
