@@ -41,6 +41,6 @@ oc start-build $(basename ${PWD}) --from-dir="." --follow --wait
 
 # Example `BuildConfig`
 
-A detailed `BuildConfig` example is found at [`os` directory](./os/README.md), please consider.
+A detailed `BuildConfig` example is found on the [`os` directory](./os/README.md), please consider.
 
 [otaviofOCM]: https://github.com/otaviof/openshift-controller-manager/tree/BUILD-558
