@@ -22,12 +22,13 @@ function phase() {
 
 phase "Preparing the environment"
 
-# fully qualified container image name
-readonly OUTPUT_REGISTRY_IMAGE="${OUTPUT_REGISTRY_IMAGE:-}"
-# path to the `.spec.output.pushSecret` secret mount
-readonly PUSH_DOCKERCFG_PATH="${PUSH_DOCKERCFG_PATH:-}"
-# informed by OpenShift Builds points to the fully qualified container registry hostname
+# informed by OpenShift Builds points to the fully qualified container registry hostname, optional
+# for this script
 readonly OUTPUT_REGISTRY="${OUTPUT_REGISTRY:-}"
+# fully qualified container image name, mandatory
+readonly OUTPUT_REGISTRY_IMAGE="${OUTPUT_REGISTRY_IMAGE:-}"
+# path to the `.spec.output.pushSecret` secret mount, mandatory
+readonly PUSH_DOCKERCFG_PATH="${PUSH_DOCKERCFG_PATH:-}"
 
 # making sure the required configuration environment varaibles are present
 [[ ! -n "${OUTPUT_REGISTRY_IMAGE}" ]] && \
