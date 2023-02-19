@@ -1,7 +1,7 @@
 #!/bin/bash
 
 shopt -s inherit_errexit
-set -eu -o pipefail
+set -aeu -o pipefail
 
 #
 # Functions
@@ -20,7 +20,7 @@ function phase() {
 # Preparing the Environment
 #
 
-phase "Preparing the environment"
+phase "Inspecting the environment variables"
 
 # informed by OpenShift Builds points to the fully qualified container registry hostname, optional
 # for this script
@@ -40,26 +40,11 @@ readonly PUSH_DOCKERCFG_PATH="${PUSH_DOCKERCFG_PATH:-}"
 # Container-Registry Authentication
 #
 
-phase "Preparing Container-Registry credentials ('${PUSH_DOCKERCFG_PATH}')"
-
-# docker configuration directory path, by convetion located at the user's home directory
-readonly export DOCKER_CONFIG="${DOCKER_CONFIG:-${HOME}/.docker}"
+readonly export DOCKER_CONFIG="${DOCKER_CONFIG:-${PUSH_DOCKERCFG_PATH}}"
+phase "Container-Registry credentials on directory '${DOCKER_CONFIG}'"
 
 [[ ! -d "${DOCKER_CONFIG}" ]] && \
-    mkdir -pv "${DOCKER_CONFIG}"
-
-# complete secret file path mounted by OpenShift Builds (".spec.output.pushSecret.name"), the secret
-# is mandatory since it controls the Container-Registry credentials.
-readonly PUSH_DOCKERCFG_FILE_PATH="${PUSH_DOCKERCFG_PATH}/.dockerconfigjson"
-
-[[ ! -f "${PUSH_DOCKERCFG_FILE_PATH}" ]] && \
-    fail "'${PUSH_DOCKERCFG_FILE_PATH}' is not found!"
-
-# the CNB uses the Docker configuration format to load the Container Registry authentication details
-# and OpenShift mounts the BuildConfig's ".spec.output.pushSecret" in the build container using a
-# different file path than the CNB expects, this script is a worksaround to link the data to the
-# conventional location
-ln -sv "${PUSH_DOCKERCFG_FILE_PATH}" "${DOCKER_CONFIG}/config.json"
+    fail "${DOCKER_CONFIG} is not found!"
 
 #
 # OpenShift Internal Registry CA
@@ -68,7 +53,7 @@ ln -sv "${PUSH_DOCKERCFG_FILE_PATH}" "${DOCKER_CONFIG}/config.json"
 # common location where the secret is mounted in OpenShift Builds
 readonly CLUSTER_CA_PATH="/var/run/configs/openshift.io/certs/certs.d/${OUTPUT_REGISTRY}/ca.crt"
 
-if [ -f "${CLUSTER_CA_PATH}" ] ; then
+if [ -f "${CLUSTER_CA_PATH}" ]; then
     phase "Adding CA to the trust store ('${CLUSTER_CA_PATH}')"
     sudo cp -v "${CLUSTER_CA_PATH}" /usr/local/share/ca-certificates
     sudo update-ca-certificates

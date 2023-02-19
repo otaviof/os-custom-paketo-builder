@@ -2,31 +2,30 @@
 
 The `BuildConfig` in this directory contains a example of using the `Custom` strategy to build a [Node.js application][nodejsExRepo] using the Buildpacks CNB (Paketo) in this repository.
 
-In order to push the container image, the secret defined on the `BuildConfig`'s `.spec.output.pushSecret` must be created, i.e.:
-
-```bash
-oc create secret docker-registry internal-registry \
-	--docker-server="image-registry.openshift-image-registry.svc:5000" \
-	--docker-username="kubeadmin" \
-	--docker-password="$(oc whoami --show-token)"
-```
-
-Including the `ImageStream` creation:
+First, create the `ImageStreams` repository, with:
 
 ```bash
 oc create imagestream nodejs-ex
 ```
 
-The CNB must run as a non-privileged user, therefore add `anyuid` SCC to the respective service-account:
+In order to push the container image, the secret defined on the `BuildConfig`'s `.spec.output.pushSecret` must be created with the `config.json` key. Later the secret is mounted on the building POD thus buildpack CNB will be able to find the expected file, to create the secret name `imagestreams` run:
+
+```bash
+REGISTRY_HOSTNAME="image-registry.openshift-image-registry.svc:5000" \
+REGISTRY_USERNAME="kubeadmin" \
+REGISTRY_PASSWORD="$(oc whoami --show-token)" \
+	oc create secret generic imagestreams \
+		--from-literal=config.json="{\"auths\":{\"${REGISTRY_HOSTNAME}\":{\"username\":\"${REGISTRY_USERNAME}\",\"password\":\"${REGISTRY_PASSWORD}\"}}}"
+```
+
+Add the `anyuid` SCC to your respective service-account, the CNB must run as a non-privileged user.
 
 ```bash
 oc adm policy add-scc-to-user anyuid --serviceaccount=default && \
 	oc adm policy add-scc-to-user anyuid --serviceaccount=default
 ```
 
-The `anyuid` SCC takes place in combination with the `BUILD_PRIVILEGED` environment variable which effectively allows the POD to run with a non-privileged user.
-
-Next, you can apply the `BuildConfig` resource:
+The `anyuid` SCC takes place in combination with the `BUILD_PRIVILEGED` environment variable to effectively allows the POD to run with a non-privileged user (1000). Next, you can apply the `BuildConfig` resource:
 
 ```bash
 oc apply --filename=os/buildconfig.yaml
@@ -40,7 +39,7 @@ oc start-build nodejs-ex --follow --wait
 
 ## Deploying
 
-To rollout the application in OpenShift, create a new `deployment` and expose it with:
+Rolling out the application in OpenShift can be achieved with the following commands:
 
 ```bash
 oc new-app nodejs-ex:latest
@@ -48,7 +47,7 @@ oc expose deployment nodejs-ex --port=8080 --target-port=8080
 oc expose service nodejs-ex
 ```
 
-Then get the route created:
+Next, get the route created for the application:
 
 ```bash
 oc get routes nodejs-ex
@@ -58,6 +57,13 @@ And try to reach its endpoint, for instance:
 
 ```bash
 curl http://nodejs-ex-otaviof.apps-crc.testing
+```
+
+At the end you can remove everything with:
+
+```bash
+oc delete all --selector="app=nodejs-ex"
+oc delete imagestreams nodejs-ex
 ```
 
 [nodejsExRepo]: https://github.com/otaviof/nodejs-ex

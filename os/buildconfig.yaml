@@ -31,4 +31,4 @@ spec:
       kind: ImageStreamTag
       name: nodejs-ex:latest
     pushSecret:
-      name: internal-registry
+      name: imagestreams
