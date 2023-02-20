@@ -20,7 +20,7 @@ function phase() {
 # Preparing the Environment
 #
 
-phase "Inspecting the environment variables"
+phase "Inspecting the environment variables ('UID=${UID}')"
 
 # informed by OpenShift Builds points to the fully qualified container registry hostname, optional
 # for this script
@@ -65,10 +65,8 @@ fi
 
 readonly export CNB_APP_DIR="${CNB_APP_DIR:-.}"
 
-# making sure the application repository clone location is `rw` for the cnb user, for instance when
-# building a Node.js application it needs to populate `node_modules` folder
-phase "Changing the ownership of '${CNB_APP_DIR}' recursively ('UID=${UID}')"
-sudo chown -Rv cnb:cnb "${CNB_APP_DIR}"
+[[ ! -d "${CNB_APP_DIR}" ]] && \
+    fail "the source code clone directory '${CNB_APP_DIR}' is not found!"
 
 phase "Files on '${CNB_APP_DIR}' ('PWD=${PWD}')"
 ls -l ${CNB_APP_DIR}/
